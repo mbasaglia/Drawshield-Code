@@ -181,8 +181,10 @@ class ShieldRect
         return "<rect x='{$this->left()}' y='{$this->top()}' width='{$this->size->width}' height='{$this->size->height}' />";
     }
 
-    function combined(ShieldRect $other)
+    function combined(?ShieldRect $other)
     {
+        if ( $other == null )
+            return clone $this;
         return ShieldRect::from_corners(
             min($other->left(), $this->left()),
             min($other->top(), $this->top()),
@@ -191,11 +193,14 @@ class ShieldRect
         );
     }
 
-    function combine(ShieldRect $other)
+    function combine(?ShieldRect $other)
     {
-        $comb = $this->combined($other);
-        $this->pos = $comb->pos;
-        $this->size = $comb->size;
+        if ( $other !== null )
+        {
+            $comb = $this->combined($other);
+            $this->pos = $comb->pos;
+            $this->size = $comb->size;
+        }
     }
 }
 

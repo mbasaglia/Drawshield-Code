@@ -311,6 +311,11 @@ class PlacementHints
     }
 }
 
+function push_transform($retval, TransformMatrix &$transform, $operations, $title, $title_tag = "desc")
+{
+    $transform = TransformMatrix::from_svg_transform($operations)->multiplied($transform);
+    return "<g transform=\"$operations\"><$title_tag>$title</$title_tag>$retval</g>\n";
+}
 
 function PlaceCharge ( $node,  // images
                             $layout,
@@ -318,10 +323,12 @@ function PlaceCharge ( $node,  // images
                             $centreX, $centreY,// centre of bounding box
                             $rotation = '0',
                             $inverted = '0',
-                            $reversed = '0' ) {
+                            $reversed = '0',
+                            ShieldRect &$bounds = null) {
 
   $charge = getCharge( $node, $layout );
   if ($charge == null) return '';
+  $bounds = $charge["bounding_box"];
   $orientation = null;
   $tincture = null;
   $Xflex = array_key_exists('wflex', $charge) ? $charge['wflex'] : 1;
@@ -391,12 +398,13 @@ function PlaceCharge ( $node,  // images
   $retval = $charge['body'];
   $chargeX = max(1,$charge['width']); // protect against zero
   $chargeY = max(1,$charge['height']);
+  $transform_mat = new TransformMatrix();
 
   if ( $inverted ) {
-    $retval = "<g transform=\"translate(0,$chargeY) scale(1,-1)\"><desc>inverted charge</desc>$retval</g>\n";
+    $retval = push_transform($retval, $transform_mat, "translate(0,$chargeY) scale(1,-1)", "inverted charge");
   }
   if ( $reversed ) {
-    $retval = "<g transform=\"translate($chargeX,0) scale(-1,1)\"><desc>reversed charge</desc>$retval</g>\n";
+    $retval = push_transform($retval, $transform_mat, "translate($chargeX,0) scale(-1,1)", "reversed charge");
   }
   if ( $orientation ) {
     $rotation = 0; // An explicit charge orientation overrides a rotation from the arrangement
@@ -405,7 +413,7 @@ function PlaceCharge ( $node,  // images
         $do_turn = $chargeY > $chargeX;
         if ( array_key_exists('turn_fesswise', $charge) ) { $do_turn = $charge['turn_fesswise']; }
         if ($do_turn ) {
-          $retval = "<g transform=\"translate($chargeY,0) rotate(90)\"><desc>fesswise charge</desc>$retval</g>\n";
+          $retval = push_transform($retval, $transform_mat, "translate($chargeY,0) rotate(90)", "fesswise charge");
           $temp = $chargeX; $chargeX = $chargeY; $chargeY = $temp;
           $temp = $Xflex; $Xflex = $Yflex; $Yflex = $temp;
         }
@@ -421,18 +429,18 @@ function PlaceCharge ( $node,  // images
 				$chargeX = ($chargeX + $chargeY) * 0.707;
 				$XY2 = $chargeX / 2;
         $chargeY = $chargeX;
-        $retval = "<g transform=\"translate($XY2,$XY2) rotate($angle) translate(-$X2,-$Y2)\"><desc>bendwise</desc>$retval</g>\n";
+        $retval = push_transform($retval, $transform_mat, "translate($XY2,$XY2) rotate($angle) translate(-$X2,-$Y2)", "bendwise");
         break;
       case 'palewise':
 //        $do_turn = $chargeX >= $chargeY;
         if ( array_key_exists('horizontal', $charge)  ) {
-          $retval = "<g transform=\"translate(0,$chargeX) rotate(-90)\"><desc>palewise charge</desc>$retval</g>\n";
+          $retval = push_transform($retval, $transform_mat, "translate(0,$chargeX) rotate(-90)", "palewise charge");
           $temp = $chargeX; $chargeX = $chargeY; $chargeY = $temp;
           $temp = $Xflex; $Xflex = $Yflex; $Yflex = $temp;
         }
         break;
       case 'haurient':
-        $retval = "<g transform=\"translate($chargeY,0) rotate(90)\"><desc>erect charge</desc>$retval</g>\n";
+        $retval = push_transform($retval, $transform_mat, "translate($chargeY,0) rotate(90)", "erect charge");
         $temp = $chargeX; $chargeX = $chargeY; $chargeY = $temp;
         $temp = $Xflex; $Xflex = $Yflex; $Yflex = $temp;
         break;
@@ -517,9 +525,10 @@ function PlaceCharge ( $node,  // images
   if (!isset($charge['title'])) $charge['title'] = 'a charge';
   // $retval = "<g transform=\"$transform\" >\n<title>" . htmlentities(transliterate($charge['title'])) . '</title>' . $retval . "</g>\n";
   //$retval = "<g transform=\"$transform\" >\n<title>" . htmlentities($charge['title'], ENT_HTML5) . '</title>' . $retval . "</g>\n";
-  $retval = "<g transform=\"$transform\" >\n<title>" . $charge['title'] . '</title>' . $retval . "</g>\n";
+  $retval = push_transform($retval, $transform_mat, $transform, $charge['title'], "title");
 
   $retval = apply_tincture( $tincture, $retval, $layout, new ShieldSize($chargeX, $chargeY), $rotation, $reversed, $inverted );
+  $bounds = $transform_mat->apply_box($bounds);
   return $retval;
 }
 

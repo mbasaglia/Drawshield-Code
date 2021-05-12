@@ -110,11 +110,13 @@ function draw() {
             $extraSpace = 150;
         }
 
+        $extraSpace += 40;
+
         $outline = getShape($layout);
 
         $displayScale = $options['size'] / 1000;
         $displayWidth = $options['size'];
-        $displayHeight = (int)(($layout->size->height + 40 + $extraSpace) * $displayScale);
+        $displayHeight = (int)(($layout->size->height + $extraSpace) * $displayScale);
 
         $header = '<?xml version="1.0" encoding="utf-8" ?>
     <svg version="1.1"
@@ -123,7 +125,7 @@ function draw() {
          xmlns:xlink="http://www.w3.org/1999/xlink" 
          xmlns:blazonML="http://drawshield.net/blazonML" ' .
          'preserveAspectRatio="xMidYMid meet" height="' . $displayHeight . '" width="' . $displayWidth . '" ';
-        $header .= 'viewBox="'. getEffect($effect, 'viewbox',1000, $layout->size->height + $extraSpace + 40) . ' ">';
+        $header .= 'viewBox="'. getEffect($effect, 'viewbox',1000, $layout->size->height + $extraSpace) . ' ">';
         $meta = '';
         $defs = '<defs>' . getEffect($effect, 'defs') . $extraDefs . '</defs>';
         $trailer =  "</svg>\n";
@@ -136,8 +138,11 @@ function draw() {
         baseProfile="full"
         xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink" ' .
-        'preserveAspectRatio="xMidYMid meet" height="' . (int)($options['size'] * 1.2) . '" width="' . $options['size'];
-        $header .= '" viewBox="'. getEffect($effect, 'viewbox') . ' ">';
+        'preserveAspectRatio="xMidYMid meet" height="' . (int)($options['size'] * 1.2) . '" width="' . $options['size'] . '"';
+
+        list($v_x, $v_y, $v_w, $v_h) = explode(",", getEffect($effect, 'viewbox', $layout->size->width, $layout->size->height));
+        $bbox = new ShieldRect(new ShieldPos($v_x + $v_w / 2, $v_y + $v_h / 2), new ShieldSize((float)$v_w, (float)$v_h));
+
         $meta = '';
         $defs = '<defs>' . getEffect($effect, 'defs') . $extraDefs .  '</defs>';
         $trailer =  "</svg>\n";
@@ -177,7 +182,7 @@ function draw() {
                     foreach ($node->childNodes as $subNode) {
                         switch ($subNode->nodeName) {
                         case blazonML::E_SUPPORTERS:
-                            $supports = drawSupporters($subNode, $layout);
+                            $supports = drawSupporters($subNode, $layout, $bbox);
                             break;
                         case blazonML::E_MANTLING:
                             $mantling = drawMantling($subNode);
@@ -241,7 +246,7 @@ function draw() {
         if ( !$options['asFile'] /* && !$options['printable'] */ ) { // minimal decoration, no metadata
             $y1Location = '1190';
             if ($layout->shape == 'flag')
-                $y1Location = $layout->size->height + $extraSpace + 40;
+                $y1Location = $layout->size->height + $extraSpace;
             if ( $options['outputFormat'] == 'svg' || $options['outputFormat'] == 'json') {
                 $messages->addMessage('legal',"Heraldic images provided on this site are for education and information only. The use of heraldic devices is restricted in many countries, independently of copyright. The granting of a Coat of Arms is solely the right of the appropriate Heraldic Authority for your nationality and country of residence.");
                 $messages->insertMessages();
@@ -264,7 +269,7 @@ function draw() {
     if (count($shieldAdjustments)) {
         $body = quickPlace($body, 1000, 1200, 1000, 1200, 500, 600, null, $shieldAdjustments);
     }
-
+/*
     // assorted combinations of achievements
     if ($mantling || count($helmets) || count($crests)) {
         $body = $mantling . '<g transform="translate(191.667,400) scale(0.61667) ">' . $body . '</g>';
@@ -316,10 +321,11 @@ function draw() {
         $body .= add_def();
         $body = getEffect($effect, 'below') . '<g ' . getEffect($effect, 'filter') . '>' . $body . getEffect($effect, 'above') . '</g>';
     }
-
+*/
     // Uncomment following 3 lines for an overall grid
     // $ordinary = [];
     // include "ordinaries/grid.inc";
     // $body .= '<g fill="#555555">' . $ordinary['body'] . '</g>';
+    $header .= " viewBox='{$bbox->left()},{$bbox->top()},{$bbox->size->width},{$bbox->size->height}'>";
     return $header . $meta . $defs . $body . $trailer;
 }

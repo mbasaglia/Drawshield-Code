@@ -1,6 +1,6 @@
 <?php
 
-function drawSupporters($supportNode, $layout) {
+function drawSupporters($supportNode, $layout, ShieldRect $bounds) {
     if ($supportNode == null) return '';
     $boundX = 300;
     $boundY = 600;
@@ -12,20 +12,25 @@ function drawSupporters($supportNode, $layout) {
     $retval = '';
     for ($i = 0; $i < $supportNode->childNodes->length; $i++) {
         $location = $supportNode->childNodes->item($i);
+        $bounds_supp = null;
         switch ($location->getAttribute('keyterm')) {
             case 'default':
                 if ($supportCount == 0) { // assume dexter first
-                    $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $dexterX, $centreY, 0, 0, 1);
+                    $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $dexterX, $centreY, 0, 0, 1, $bounds_supp);
+                    $bounds->combine($bounds_supp);
                     $supportCount++;
                 } else {
-                    $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $sinisterX, $centreY, 0, 0, 0);
+                    $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $sinisterX, $centreY, 0, 0, 0, $bounds_supp);
+                    $bounds->combine($bounds_supp);
                 }
                 break;
             case 'dexter':
-                $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $dexterX, $centreY, 0, 0, 1);
+                $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $dexterX, $centreY, 0, 0, 1, $bounds_supp);
+                $bounds->combine($bounds_supp);
                 break;
             case 'sinister':
-                $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $sinisterX, $centreY, 0, 0, 0);
+                $retval .= placeCharge($location->firstChild, $layout, $boundX, $boundY, $sinisterX, $centreY, 0, 0, 0, $bounds_supp);
+                $bounds->combine($bounds_supp);
                 break;
         }
     }
