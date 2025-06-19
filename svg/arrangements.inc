@@ -64,35 +64,50 @@ require_once('ordinaries/bend-helper.inc');
      }
      // strip off last '/'
      $newPlacement = rtrim($newPlacement,'/');
+
      return $newPlacement;
    }
 
-function adjustDistance($item, $placement) {
-  foreach ( $item->childNodes as $child ) {
-    if ( $child->nodeName == 'modifier' ) {
-      switch ( $child->getAttribute('keyterm') ) {
-        case 'further-apart':
-          $placement = adjustPlacement($placement,'-100,-100,1200,1200', false);
-          break;
-        case 'much-further-apart':
-          $placement = adjustPlacement($placement,'-200,-200,1400,1400', false);
-          break;
-        case 'very-much-further-apart':
-          $placement = adjustPlacement($placement,'-300,-300,1600,1600', false);
-          break;
-        case 'closer-together':
-           $placement = adjustPlacement($placement,'50,50,900,900', false);
-           break;
-        case 'much-closer-together':
-           $placement = adjustPlacement($placement,'100,100,800,800', false);
-           break;
-        case 'very-much-closer-together':
-           $placement = adjustPlacement($placement,'150,150,700,700', false);
-           break;
-      }
+
+function distanceMultiplier($item) {
+    $mult = 1;
+
+    foreach ( $item->childNodes as $child ) {
+        if ( $child->nodeName == 'modifier' ) {
+            switch ( $child->getAttribute('keyterm') ) {
+                case 'further-apart':
+                    $mult = 1.2;
+                    break;
+                case 'much-further-apart':
+                    $mult = 1.4;
+                    break;
+                case 'very-much-further-apart':
+                    $mult = 1.6;
+                    break;
+                case 'closer-together':
+                    $mult = 0.9;
+                    break;
+                case 'much-closer-together':
+                    $mult = 0.8;
+                    break;
+                case 'very-much-closer-together':
+                    $mult = 0.7;
+                    break;
+            }
+        }
     }
-  }
-  return $placement;
+
+    return $mult;
+}
+
+function adjustDistance($item, $placement) {
+    $mult = distanceMultiplier($item);
+    if ( $mult != 1 ) {
+        $extent = (int)round(1000 * $mult);
+        $pos = (int)round(500 * (1-$mult));
+        $box = "$pos,$pos,$extent,$extent";
+        return adjustPlacement($placement, $box, false);
+    }
 }
 
 /*
@@ -105,22 +120,22 @@ caption "Heater"
 then
 drawn in a french shape cendree an orle argent a grid sable
 caption "French"
-then 
+then
 drawn in an oval shape cendree an orle argent a grid sable
 caption "Oval"
-then 
+then
 drawn in a lozenge shape cendree an orle argent a grid sable
 caption "Lozenge"
 then
 drawn in a square shape cendree an orle argent a grid sable
 caption "Square"
-then 
+then
 drawn in an italian shape cendree an orle argent a grid sable
 caption "Italian"
-then 
+then
 drawn in a swiss shape cendree an orle argent a grid sable
 caption "Swiss"
-then 
+then
 drawn in a german shape cendree an orle argent a grid sable
 caption "German"
 then
@@ -169,7 +184,7 @@ function inOrle($layout, $number) {
        return 'x';
 }
 
-function inAnnulo($number, $box, $layout, $arc = "full")
+function inAnnulo($number, $box, $layout, $item, $arc = "full")
 {
     if ( $layout->size == $box->size )
     {
@@ -180,7 +195,7 @@ function inAnnulo($number, $box, $layout, $arc = "full")
     $cx = $box->pos->x;
     $cy = $box->pos->y;
 
-    $radius = min($box->size->height, $box->size->width) / 2;
+    $radius = min($box->size->height, $box->size->width) / 2 * 0.9;
 
     $sizeLimit = 160;
     $turn = 180 / ($number -1);
@@ -210,7 +225,7 @@ function inAnnulo($number, $box, $layout, $arc = "full")
     // if ($size > 150)
       //   $size = 200;
 
-    $radius -= $size / 2;
+    $radius = $radius * distanceMultiplier($item) - $size / 2;
 
     $placement = str_repeat('/',$number - 1);
     for ($i = 0; $i < $number; $i++) {
@@ -610,7 +625,7 @@ function adjustment_from_position($position, $layout, $underlying_div, $bigOrdin
                 new ShieldPos($layout->size->width - $width6th, $height6th),
                 new ShieldSize($width3rd, $height3rd)
             ) ];
-        case 'inmidchief': return [ 
+        case 'inmidchief': return [
             new ShieldRect(
                 new ShieldPos($width2th, $height6th),
                 new ShieldSize($width3rd, $height3rd)
@@ -861,7 +876,7 @@ function get_placement(DOMElement $item, $layout) {
 
     foreach ( $adjustmentList as $adjust ) {
         if ($adjust) {
-            // at this point, if $adjustment is not null it contains the 4 coordinates of a bounding box on 
+            // at this point, if $adjustment is not null it contains the 4 coordinates of a bounding box on
             // a 1000 x 1000 area. We need to map this bounding box onto the area we are actually given in
             // the current $boundingBox
 
@@ -934,7 +949,7 @@ function get_placement(DOMElement $item, $layout) {
             $placement = 'i';
             // similarly, if our parent charge has an explicit arrangement
           } elseif ( $xpath->evaluate("boolean(parent::modifier/parent::charge/modifier[@keyterm='arrangement'])",$item) ) {
-            $placement = 'i';        
+            $placement = 'i';
           } else { // Arrange on an open field
             if ( substr($item->parentNode->parentNode->getAttribute('keyterm'),0,8) == 'quadrate' ) {// Special placement for items around a quadrate cross
                 $placement = '////300,380,160,160:700,380,160,160:300,750:700,750:500,980/';
@@ -957,19 +972,19 @@ function get_placement(DOMElement $item, $layout) {
         if ( $placement == '' && $arr ) {
           switch ( $arr ) {
             case 'inannulo':
-                $placement = inAnnulo($number, $boundingBox, $layout);
+                $placement = inAnnulo($number, $boundingBox, $layout, $item);
                 break;
             case 'inuppersemi':
-                $placement = inAnnulo($number, $boundingBox, $layout, "upper");
+                $placement = inAnnulo($number, $boundingBox, $layout, $item, "upper");
                 break;
             case 'inlowersemi':
-                $placement = inAnnulo($number, $boundingBox, $layout, "lower");
+                $placement = inAnnulo($number, $boundingBox, $layout, $item, "lower");
                 break;
             case 'indextersemi':
-                $placement = inAnnulo($number, $boundingBox, $layout, "dexter");
+                $placement = inAnnulo($number, $boundingBox, $layout, $item, "dexter");
                 break;
             case 'insinistersemi':
-                $placement = inAnnulo($number, $boundingBox, $layout, "sinister");
+                $placement = inAnnulo($number, $boundingBox, $layout, $item, "sinister");
                 break;
             case 'combattant':
                 $placement = placement_combattant($boundingBox, 0, 0);
@@ -1085,7 +1100,7 @@ function get_placement(DOMElement $item, $layout) {
                 $h = $w / $correct_h;
                 $placement = adjustplacement($placement,"$x,$y,$w,$h");
             }
-        } 
+        }
 
         // If we don't have a placement yet the default is just to arrange in wide rows
         if ( $placement == '' ) {
@@ -1102,7 +1117,8 @@ function get_placement(DOMElement $item, $layout) {
             }
             $placement = calcPlace($item,'w',$boundingBox);
         }
-        $placement = adjustDistance($item, $placement);
+        if ( $arr != "inannulo" )
+            $placement = adjustDistance($item, $placement);
         $placementList[] = $placement;
         $placement = '';
     }
@@ -1114,7 +1130,7 @@ function get_placement(DOMElement $item, $layout) {
 
 function calcPlace( $node, $aspect, $bb = '100,100,800,900'  ) {
     global $messages;
-    
+
   $wide_rows = array (
     '0',          // 0
     '1',          // 1
