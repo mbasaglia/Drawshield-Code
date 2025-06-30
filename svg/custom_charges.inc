@@ -35,6 +35,7 @@ class SmartChargeGroup
     function add_patterns(languageDB $lexicon)
     {
         $this->initialize();
+        $lexicon->patterns[] = "=charge/{$this->group}";
         foreach ( $this->charges as $charge )
             $charge->add_pattern($lexicon);
 
@@ -88,6 +89,7 @@ class SmartCharge
 {
     protected $regexp;
     protected $slug;
+    protected $svg = null;
 
     function __construct($regexp, $slug)
     {
@@ -103,12 +105,21 @@ class SmartCharge
     function add_pattern(languageDB $lexicon)
     {
         foreach ( $this->regexp as $regexp )
-            $lexicon->appendPattern(languageDB::CHARGE, [$regexp, "custom/" . $this->slug]);
+            $lexicon->patterns[] = "$regexp={$this->slug}";
     }
 
     function charge_data(SmartChargeGroup $group, DOMElement $node, $charge)
     {
-        $charge['file'] = $this->slug . ".svg";
+        $file = $this->slug . ".svg";
+        $charge['file'] =  $file;
+
+        if ( $this->svg == null )
+        {
+            $full_path = $group->file_path($this->filename) . DIRECTORY_SEPARATOR . $file;
+            $this->svg = file_get_contents($full_path);
+        }
+        $charge['svgCode'] = $this->svg;
+
         return $charge;
     }
 
@@ -121,7 +132,6 @@ class SmartCharge
 class RasterCharge extends SmartCharge
 {
     private $filename;
-    private $svg = null;
 
     function __construct($regexp, $basename)
     {
@@ -166,7 +176,6 @@ class PaletteFeatureCharge extends SmartCharge
 {
     /// @var SvgFeatureMarker
     private $marker;
-    private $svg = null;
 
     public function __construct(SvgFeatureMarker $marker, $regexp, $slug)
     {

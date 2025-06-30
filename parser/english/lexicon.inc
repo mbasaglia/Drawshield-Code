@@ -161,6 +161,7 @@ class languageDB extends lexicon
             $lexemes = file(self::LEXEMEDIR . '/' . $lexFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             $this->patterns = array_merge ($this->patterns, $lexemes);
         }
+        require_once(__dir__ . "/../../svg/custom_charges.inc");
+        SmartChargeGroup::instance()->add_patterns($this);
     }
-
 }
