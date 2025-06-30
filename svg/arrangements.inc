@@ -108,6 +108,7 @@ function adjustDistance($item, $placement) {
         $box = "$pos,$pos,$extent,$extent";
         return adjustPlacement($placement, $box, false);
     }
+    return $placement;
 }
 
 /*
