@@ -81,7 +81,7 @@ function replaceableColour($colourSpec) {
   '#ff0000', '#00ff00', '#008000', '#800080',
   '#0000ff', '#ffff00',
   '#00ffff', '#ff00ff',
-  'rgb(255,0,0)', 'rgb(0,255,0)', 
+  'rgb(255,0,0)', 'rgb(0,255,0)',
   'rgb(0,0,255)', 'rgb(255,255,0)',
   'rgb(0,255,255)', 'rgb(255,0,255)',
     'rgb(255, 0, 0)',  'rgb(0, 255, 0)',
@@ -108,7 +108,7 @@ function splitStyle ( $styles, $attributeKeys, $strokeCol, $strokeWidth ) {
       continue; // actual attributes take priority
     }
     switch($setting) {
-      case 'fill': 
+      case 'fill':
        if ( array_key_exists("raw",$options) ) {
           $retval .= ' fill="' . $value . '" '; // leave alone
        } else {
@@ -144,7 +144,7 @@ function splitStyle ( $styles, $attributeKeys, $strokeCol, $strokeWidth ) {
     }
   }
 
-  return $retval;
+  return $retval ;
 }
 
 function rewriteXlink($attributes){
@@ -156,7 +156,7 @@ function rewriteXlink($attributes){
     return $retval;
 }
 
-function rewriteAttributes($attributes, $strokeCol, $strokeWidth, $class = '', $fillSet = false) {
+function rewriteAttributes($attributes, $strokeCol, $strokeWidth, $class = '', $fillSet = false, $strokeSet = false) {
 //  global $messages;
   global $options, $strokeColours;
   $retval = '';
@@ -167,6 +167,7 @@ function rewriteAttributes($attributes, $strokeCol, $strokeWidth, $class = '', $
     $existingAttributes[] = $key;
   }
   if ($fillSet) $existingAttributes[] = 'fill';
+  if ($strokeSet) $existingAttributes[] = 'stroke';
   $fill = '';
   $opacityFound = false;
   $opacityNeeded = false;
@@ -187,7 +188,7 @@ function rewriteAttributes($attributes, $strokeCol, $strokeWidth, $class = '', $
       case 'href':
         $retval .= 'xlink:href="' . $data . '" ';
         break;
-      case 'fill': 
+      case 'fill':
         if ( array_key_exists("raw",$options) ) {
           $fill = ' fill="' . $data . '" '; // leave alone
         } else {
@@ -220,7 +221,7 @@ function rewriteAttributes($attributes, $strokeCol, $strokeWidth, $class = '', $
           if ($multiplier != 1)
               $data = floatval($data) * $multiplier;
         $retval .= ' stroke-width="' . $data . '" ';
-       break; 
+       break;
       default:
         if (( strpos($key,'sodipodi:') === false ) and (strpos($key,'inkscape:') === false ))
           $retval .= $key . '="' . $data . '" ';
@@ -367,7 +368,7 @@ function handle_extra($element, $extra, $featureColours, &$bounding_box)
     return $item;
 }
 
-function addChild(SimpleXMLElement $element, $featureColours, $chargeGroup, $chargeName, 
+function addChild(SimpleXMLElement $element, $featureColours, $chargeGroup, $chargeName,
     $extras, $strokeCol, $strokeWidth, ShieldRect &$bounding_box, $fillSet = false ) {
     $name = $element->getName();
     if ( $name == "image" )
@@ -390,13 +391,13 @@ function addChild(SimpleXMLElement $element, $featureColours, $chargeGroup, $cha
         else if ( $name == "ellipse" || $name == "circle" )
             return hold_charge($element, $extras[$id], $bounding_box);
     }
-  //-------------------------------------------------------------------------
-  $visible = true;
-  if ( isset($element["style"]) && strpos($element["style"], "display:none") !== false )
-    $visible = false;
+    //-------------------------------------------------------------------------
+    $visible = true;
+    if ( isset($element["style"]) && strpos($element["style"], "display:none") !== false )
+      $visible = false;
 
-
-  $item = "<$name ";
+    $strokeSet = false;
+    $item = "<$name ";
     if (substr($id, 0, 8) == 'textPath') $item .= ' id="' . $id . '" '; // need this for the motto
     if ($id != null && substr($id, 0, 4) != 'path' && substr($id, 0, 5) != 'group') {
     // We allow multiple features with numeric flags at the end
@@ -414,6 +415,7 @@ function addChild(SimpleXMLElement $element, $featureColours, $chargeGroup, $cha
     } elseif (substr($id, 0, 7) == 'outline') { // This is a path that is actually a stroke
         $item .= ' fill="' . $strokeCol . '" stroke="none" ';
         $fillSet = true;
+        $strokeSet = true;
     } elseif (substr($id, 0, 4) == 'eyes') { // no eye colour given, paint it black
         $item .= ' fill="black" ';
         $fillSet = true;
@@ -429,7 +431,7 @@ function addChild(SimpleXMLElement $element, $featureColours, $chargeGroup, $cha
   if ( !$visible )
     return '';
 
-   $item .= rewriteAttributes($element->attributes(), $strokeCol, $strokeWidth, $class, $fillSet);
+   $item .= rewriteAttributes($element->attributes(), $strokeCol, $strokeWidth, $class, $fillSet, $strokeSet);
     $item .= rewriteXlink($element->attributes("xlink",true));
   $subitem = '';
   if ( $name == 'text' or $name == 'tspan' or $name == 'textPath' ) {
