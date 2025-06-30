@@ -17,6 +17,8 @@ This file is part of the DrawShield.net heraldry image creation program
 
 class ShieldSize
 {
+    public $width, $height;
+
     function __construct($width, $height)
     {
         $this->width = $width;
@@ -44,6 +46,8 @@ function lerp($a, $b, $factor)
 
 class ShieldPos
 {
+    public $x, $y;
+
     function __construct($x, $y)
     {
         $this->x = $x;
@@ -109,6 +113,8 @@ class ShieldPos
 
 class ShieldRect
 {
+    public $pos, $size;
+
     function __construct(ShieldPos $pos, ShieldSize $size)
     {
         $this->pos = $pos;
@@ -224,6 +230,8 @@ class ShieldLayout
         "flag" => 0,
         "quarter" => 0,
     ];
+
+    public $size, $shape, $cross_point, $charge_hint, $chief, $section, $division_offset;
 
     function __construct(ShieldSize $size, $shape, ShieldPos $cross_point = null, ShieldRect $charge_hint = null, $chief = true, $section = null)
     {
@@ -346,7 +354,7 @@ class ShieldLayout
         );
     }
 
-    
+
     function cross_point_ratio()
     {
         return new ShieldPos(

@@ -120,7 +120,7 @@ function rgb($keyterm) {
           break;
         }
     }
-    if (count($errorColours)) 
+    if (count($errorColours))
       return array_pop($errorColours);
     else
       return '#ffffff';
@@ -172,7 +172,7 @@ function getStroke($tincture, $fixedStroke = false) {
             $retval = rgb('stroke-dark');
         } else {
             // dark
-            $retval = rgb('stroke-light'); 
+            $retval = rgb('stroke-light');
         }
         return($retval);
     }
@@ -190,7 +190,7 @@ function getStroke($tincture, $fixedStroke = false) {
                 $retval = rgb('stroke-dark');
             } else {
                 // dark
-                $retval = rgb('stroke-light'); 
+                $retval = rgb('stroke-light');
             }
         }
         break;
@@ -198,7 +198,7 @@ function getStroke($tincture, $fixedStroke = false) {
     case 'counterChanged': // ditto
     case 'division': // ditto
         break;
-    case 'fur': // probably should improve this one and choose a stroke 
+    case 'fur': // probably should improve this one and choose a stroke
         // colour depending on the main colour of the fur
         break; // just go with default mid-gray for now
     case 'colour':
@@ -268,6 +268,8 @@ function mixRGB($hex1, $hex2) {
 
 class TinctureData
 {
+    public $node, $type_node, $type_name, $rev, $inv, $pattern_transform, $fill, $defs, $mask, $opacity;
+
     function __construct($tinctureNode, $rev = false, $inv = false)
     {
         $this->node = resolveReference($tinctureNode);
